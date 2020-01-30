@@ -1,0 +1,148 @@
+#!/bin/bash
+
+cmd=$1
+
+if [ -z ${cmd+x} ]
+then
+  cmd=help
+fi
+
+if [ -f $HOME/.scratchrc ]
+then
+  source $HOME/.scratchrc
+fi
+
+if [ -z ${scratchpadDir+x} ]
+then
+  scratchpadDir=$HOME/scratchpad
+fi
+
+if [ -z ${scratchpadFilename+x} ]
+then
+  scratchpadFilename=page.md
+fi
+
+function init {
+  dir=${1:-$scratchpadDir}
+  fil=${2:-$scratchpadFilename}
+  if [ -d $dir/.git ]
+  then
+    echo "Directory '$dir' is already a git repository"
+    exit 1
+  else
+    mkdir -p $dir
+    touch $dir/$fil
+    cd $dir
+    git init > /dev/null
+    append 1
+    echo "Initialized scratchpad at '$dir/$fil'"
+  fi
+}
+
+function append {
+  cd $scratchpadDir
+  last=`git for-each-ref --format='%(refname:short)' | sort -n | tail -1`
+  b=${1:-$((last+1))}
+  git checkout -b $b > /dev/null 2>&1
+  cat /dev/null > $scratchpadFilename
+  gam
+}
+
+function gam {
+  cd $scratchpadDir
+  git add -A > /dev/null 2>&1
+  git commit -m "scratchpad commit" > /dev/null 2>&1
+}
+
+function bookmark {
+  gam
+  gb=`git rev-parse --abbrev-ref HEAD`
+  if [ -z ${1+x} ]
+  then
+    echo "Bookmarked page $gb"
+  else
+    git symbolic-ref refs/heads/${1} refs/heads/${gb} > /dev/null
+    echo "Bookmarked page $gb as $1"
+  fi
+}
+
+function flip {
+  gam
+  if [ -z ${1+x} ]
+  then
+    append
+    gb=`git rev-parse --abbrev-ref HEAD`
+    echo "Flipped to page $gb"
+  else
+    cd $scratchpadDir
+    git checkout $1 > /dev/null 2>&1
+    gb=`git rev-parse --abbrev-ref HEAD`
+    echo "Flipped to page $gb"
+  fi
+}
+
+function list {
+  cd $scratchpadDir
+  git branch
+}
+
+function page {
+  cd $scratchpadDir
+  git branch --list '[0-9]'
+}
+
+function getPageNumber {
+  if [[ `git symbolic-ref refs/heads/$1 --short` ]] &>/dev/null
+  then
+    pn=`git symbolic-ref refs/heads/$1 --short`
+  fi
+}
+
+function trash {
+  if [ -z ${1+x} ]
+  then
+    echo "Missing page number"
+    exit 1
+  else
+    cd $scratchpadDir
+    p=`git rev-parse --abbrev-ref HEAD`
+    if [ $p == $1 ]
+    then
+      echo "Can't trash current page"
+      exit 1
+    fi
+    for name in `git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]' `;
+    do
+      getPageNumber $name
+      if [ $1 == $pn ]
+      then
+        echo "Removing bookmark $name"
+        git symbolic-ref refs/heads/$name --delete > /dev/null 2>&1
+      fi
+    done
+    git branch -D $1 > /dev/null 2>&1
+    echo "Trashed page $1"
+  fi
+}
+
+if [[ $cmd == "init" ]]
+then
+  init $2 $3
+elif [[ $cmd == "bookmark" ]]
+then
+  bookmark $2
+elif [[ $cmd == "flip" ]]
+then
+  flip $2
+elif [[ $cmd == "list" ]]
+then
+  list
+elif [[ $cmd == "page" ]]
+then
+  page
+elif [[ $cmd == "trash" ]]
+then
+  trash $2
+else
+  echo "Try 'scratchpad init'"
+fi
