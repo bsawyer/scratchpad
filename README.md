@@ -1,6 +1,6 @@
 # Scratchpad CLI
 ## What is it?
-`scratchpad` is a cli for managing one git repository where every branch is a "page".
+`scratchpad` is a cli for managing multiple project notes with one repository
 
 ## Why would I want that?
 - Keep notes separate from actual source code
