@@ -32,6 +32,9 @@ Flipping to a page stages and commits the current page then checks out the targe
 ```
 ~ scratchpad flip
 Flipped to page 2
+
+~ scratchpad flip 1
+Flipped to page 1
 ```
 
 ### bookmark
@@ -44,6 +47,12 @@ Creates a symbolic ref to the current pages branch. If no name is specified it j
 ```
 ~ scratchpad bookmark meeting-notes
 Bookmarked page 2 as meeting-notes
+
+~ scratchpad flip
+Flipped to page 3
+
+~ scratchpad flip meeting-notes
+Flipped to page 2
 ```
 
 ### trash
@@ -70,10 +79,7 @@ clone this repo
 `git clone`
 
 symlink the script
-`ln -s ./scratchpad $WhereYouWant/scratchpad`
-
-make it executable
-`chmod 755 ./scratchpad`
+`ln -s ./scratchpad $HOME/bin/scratchpad`
 
 ## Misc.
 
