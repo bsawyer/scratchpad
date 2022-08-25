@@ -1,0 +1,12 @@
+# To enable this hook, rename this file to "post-checkout" and
+# move it to your projects .git/hooks/ directory.
+
+branch=`git symbolic-ref -q HEAD`
+if [ "$branch" == "" ]; then
+  branch=master
+else
+  branch=`basename "$branch"`
+fi
+
+# Depending on your local alias for the scratchpad command
+pad flip $branch

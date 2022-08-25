@@ -1,5 +1,6 @@
 #!/bin/bash
 
+name=`basename "$0"`
 cmd=$1
 
 if [ -z ${cmd+x} ]
@@ -19,7 +20,7 @@ fi
 
 if [ -z ${scratchpadFilename+x} ]
 then
-  scratchpadFilename=page.md
+  scratchpadFilename=pad.md
 fi
 
 function init {
@@ -54,15 +55,15 @@ function gam {
   git commit -m "scratchpad commit" > /dev/null 2>&1
 }
 
-function bookmark {
+function tag {
   gam
   gb=`git rev-parse --abbrev-ref HEAD`
   if [ -z ${1+x} ]
   then
-    echo "Bookmarked page $gb"
+    echo "Tagged page $gb"
   else
     git symbolic-ref refs/heads/${1} refs/heads/${gb} > /dev/null
-    echo "Bookmarked page $gb as $1"
+    echo "Tagged page $gb as $1"
   fi
 }
 
@@ -88,9 +89,54 @@ function list {
 
 function page {
   cd $scratchpadDir
-  git branch --list '[0-9]'
+  git branch --list '[[:digit:]]*'
 }
 
+function copy {
+  if [ -z ${1+x} ]
+  then
+    echo "Missing name for copy"
+    exit 1
+  else
+    cd $scratchpadDir
+    git checkout master > /dev/null 2>&1
+    git checkout -b $1 > /dev/null 2>&1
+    for p in `page`;
+      do
+        git checkout $p > /dev/null 2>&1
+        `mv $scratchpadFilename page$p.md` > /dev/null 2>&1
+        git add -A > /dev/null 2>&1
+        git commit -m 'copy' > /dev/null 2>&1
+        git checkout $1 > /dev/null 2>&1
+        git checkout $p page$p.md > /dev/null 2>&1
+        git commit -m "copy page '$p'" > /dev/null 2>&1
+        git checkout $p > /dev/null 2>&1
+        git reset --hard HEAD~1 > /dev/null 2>&1
+      done
+
+    readme="# Tags"
+
+    for name in `git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]' `;
+    do
+      unset pn
+      getPageNumber $name
+      if [ $pn ]
+      then
+        readme="${readme}"$'\n'"- [${name}](page$pn.md)"
+      fi
+    done
+
+    git checkout $1 > /dev/null 2>&1
+    echo "$readme" > readme.md
+
+    git add -A > /dev/null 2>&1
+    git commit -m 'create readme' > /dev/null 2>&1
+    git checkout master > /dev/null 2>&1
+    echo "Copied scratchpad to $1"
+  fi
+}
+
+# only symbolic refs will return a value
 function getPageNumber {
   if [[ `git symbolic-ref refs/heads/$1 --short` ]] &>/dev/null
   then
@@ -116,7 +162,7 @@ function trash {
       getPageNumber $name
       if [ $1 == $pn ]
       then
-        echo "Removing bookmark $name"
+        echo "Removing tag $name"
         git symbolic-ref refs/heads/$name --delete > /dev/null 2>&1
       fi
     done
@@ -128,9 +174,9 @@ function trash {
 if [[ $cmd == "init" ]]
 then
   init $2 $3
-elif [[ $cmd == "bookmark" ]]
+elif [[ $cmd == "tag" ]]
 then
-  bookmark $2
+  tag $2
 elif [[ $cmd == "flip" ]]
 then
   flip $2
@@ -143,6 +189,29 @@ then
 elif [[ $cmd == "trash" ]]
 then
   trash $2
+elif [[ $cmd == "copy" ]]
+then
+  copy $2
 else
-  echo "Try 'scratchpad init'"
+  # my first heredoc :)
+  cat <<- EOM
+Missing action, maybe try '$name init'
+
+How to use Scratchpad CLI:
+
+> $name init ~/my-folder
+"Initialized scratchpad at '~/my-folder/pad.md'"
+
+> $name flip
+"Flipped to page 2"
+
+> $name tag my-first-tag
+
+> $name flip 1
+"Flipped to page 1"
+
+> $name trash 2
+"Trashed page 2"
+
+EOM
 fi

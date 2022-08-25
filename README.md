@@ -15,12 +15,12 @@ Each page is simply one markdown file that gets committed to its own branch
 ### init
 **Description**
 
-initializes a git repository at $`HOME/scratchpad` with a blank mardown file `page.md`
+initializes a git repository at $`HOME/scratchpad` with a blank markdown file `pad.md`
 
 **Usage**
 ```
 ~ scratchpad init
-Initialized scratchpad at '$HOME/scratchpad/page.md'
+Initialized scratchpad at '$HOME/scratchpad/pad.md'
 ```
 
 ### flip
@@ -67,10 +67,10 @@ Deletes target pages symbolic refs and branch.
 Trashed page 1
 ```
 ## Config
-By default the git repository is initialized in `$HOME/scratchpad` and a markdown file `page.md` is used as a page. It's possible to change these by creating a file `$HOME/.scratchrc`
+By default the git repository is initialized in `$HOME/scratchpad` and a markdown file `pad.md` is used as a page. It's possible to change these by creating a file `$HOME/.scratchrc`
 ```
 scratchpadDir=$HOME/scratchpad
-scratchpadFilename=page.md
+scratchpadFilename=pad.md
 ```
 
 ## Install
@@ -84,5 +84,6 @@ symlink the script
 ## Misc.
 
 - Bookmarks can't start with a number ;)
-- I keep `page.md` as a pinned tab in my IDE for easy note taking
+- I alias the script to pad: `ln -s ./scratchpad $HOME/bin/pad`
+- I keep `pad.md` as a pinned tab in my IDE for easy note taking
 - A neat trick is to associate a page with a particular branch in another repository on your local machine simply by adding a hook to `.git/hooks/post-checkout` that flips to a page mapped to the branch
