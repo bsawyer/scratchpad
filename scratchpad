@@ -107,12 +107,12 @@ function flip {
 
 function list {
   cd $scratchpadDir
-  git branch
+  git branch --list '[[:alpha:]]*' | sort -n -k2
 }
 
 function page {
   cd $scratchpadDir
-  git branch --list '[[:digit:]]*'
+  git branch --list '[[:digit:]]*' | sort -n
 }
 
 function pages {
@@ -122,7 +122,7 @@ function pages {
 
 function names {
   cd $scratchpadDir
-  git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]'
+  git for-each-ref refs/heads/ --format='%(refname:short)' | sort -n | grep '[^0-9]'
 }
 
 function copy {
@@ -135,10 +135,29 @@ function copy {
     git checkout master > /dev/null 2>&1
     git checkout -b $1 > /dev/null 2>&1
 
-    readme="# Pages"
+    readme="# Outline"
     for p in `pages`;
       do
-        readme="${readme}"$'\n'"- [Page ${p}](page$p.md)"
+
+        readme="${readme}"$'\n'"## Page $p"
+        readme="${readme}"$'\n'"- [${scratchpadFilename}](page$p.md)"
+
+        # hash=`git --no-pager log -n 1 ${p} --pretty=format:"%H"`
+        # for link in `git for-each-ref refs/heads/ | grep $hash | sed 's/'$hash' commit//' | xargs basename`;
+        # do
+        #   readme="${readme}"$'\n'"- [${link}](page$p.md#${link})"
+        # done
+
+        for name in `names`;
+        do
+          unset pn
+          getPageNumber $name
+          if [ "$pn" == $p ]
+          then
+            readme="${readme}"$'\n'"  - [${name}](page$p.md#${name})"
+          fi
+        done
+
         git checkout $p > /dev/null 2>&1
         `mv $scratchpadFilename page$p.md` > /dev/null 2>&1
         git add -A > /dev/null 2>&1
@@ -150,16 +169,16 @@ function copy {
         git reset --hard HEAD~1 > /dev/null 2>&1
       done
 
-    readme="${readme}"$'\n'"# Tags"
-    for name in `names`;
-    do
-      unset pn
-      getPageNumber $name
-      if [ $pn ]
-      then
-        readme="${readme}"$'\n'"- [${name}](page$pn.md)"
-      fi
-    done
+    # readme="${readme}"$'\n'"# Tags"
+    # for name in `names`;
+    # do
+    #   unset pn
+    #   getPageNumber $name
+    #   if [ $pn ]
+    #   then
+    #     readme="${readme}"$'\n'"- [${name}](page$pn.md#${name})"
+    #   fi
+    # done
 
     git checkout $1 > /dev/null 2>&1
     echo "$readme" > readme.md
