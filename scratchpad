@@ -8,10 +8,33 @@ then
   cmd=help
 fi
 
-if [ -f $HOME/.scratchrc ]
-then
-  source $HOME/.scratchrc
-fi
+function getRC {
+  found=0
+  dir=$PWD
+  while [ $found -eq 0 ]
+  do
+    if [ -f $dir/.scratchrc ]
+    then
+      echo "Found RC file at '$dir/.scratchrc'"$'\n'
+      source $dir/.scratchrc
+      found=1
+    else
+      if [ $dir == "/" ]
+      then
+        found=1
+      else
+        dir="$(dirname "$dir")"
+      fi
+    fi
+  done
+}
+
+getRC
+
+# if [ -f $HOME/.scratchrc ]
+# then
+#   source $HOME/.scratchrc
+# fi
 
 if [ -z ${scratchpadDir+x} ]
 then
@@ -92,6 +115,16 @@ function page {
   git branch --list '[[:digit:]]*'
 }
 
+function pages {
+  cd $scratchpadDir
+  git branch --list '[[:digit:]]*' | sed 's/*/ /' | sort -n
+}
+
+function names {
+  cd $scratchpadDir
+  git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]'
+}
+
 function copy {
   if [ -z ${1+x} ]
   then
@@ -101,8 +134,11 @@ function copy {
     cd $scratchpadDir
     git checkout master > /dev/null 2>&1
     git checkout -b $1 > /dev/null 2>&1
-    for p in `page`;
+
+    readme="# Pages"
+    for p in `pages`;
       do
+        readme="${readme}"$'\n'"- [Page ${p}](page$p.md)"
         git checkout $p > /dev/null 2>&1
         `mv $scratchpadFilename page$p.md` > /dev/null 2>&1
         git add -A > /dev/null 2>&1
@@ -114,9 +150,8 @@ function copy {
         git reset --hard HEAD~1 > /dev/null 2>&1
       done
 
-    readme="# Tags"
-
-    for name in `git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]' `;
+    readme="${readme}"$'\n'"# Tags"
+    for name in `names`;
     do
       unset pn
       getPageNumber $name
@@ -157,7 +192,7 @@ function trash {
       echo "Can't trash current page"
       exit 1
     fi
-    for name in `git for-each-ref --format='%(refname:short)' | sort -n | grep '[^0-9]' `;
+    for name in `names`;
     do
       getPageNumber $name
       if [ $1 == $pn ]
