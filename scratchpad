@@ -126,6 +126,7 @@ function names {
 }
 
 function copy {
+  gam
   if [ -z ${1+x} ]
   then
     echo "Missing name for copy"
@@ -264,8 +265,17 @@ How to use Scratchpad CLI:
 > $name flip 1
 "Flipped to page 1"
 
+> $name list
+"my-first-tag -> 2"
+
 > $name trash 2
 "Trashed page 2"
+
+> $name page
+" * 1"
+
+> $name copy main
+"Copied scratchpad to main"
 
 EOM
 fi
