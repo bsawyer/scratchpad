@@ -15,7 +15,7 @@ function getRC {
   do
     if [ -f $dir/.scratchrc ]
     then
-      echo "Found RC file at '$dir/.scratchrc'"$'\n'
+      # echo "Found RC file at '$dir/.scratchrc'"$'\n'
       source $dir/.scratchrc
       found=1
     else
@@ -27,6 +27,7 @@ function getRC {
       fi
     fi
   done
+  configPath=$dir/.scratchrc
 }
 
 getRC
@@ -226,6 +227,14 @@ function trash {
   fi
 }
 
+function path {
+  echo "$scratchpadDir/$scratchpadFilename"
+}
+
+function config {
+  echo "$configPath"
+}
+
 if [[ $cmd == "init" ]]
 then
   init $2 $3
@@ -247,6 +256,12 @@ then
 elif [[ $cmd == "copy" ]]
 then
   copy $2
+elif [[ $cmd == "path" ]]
+then
+  path
+elif [[ $cmd == "config" ]]
+then
+  config
 else
   # my first heredoc :)
   cat <<- EOM
@@ -255,27 +270,33 @@ Missing action, maybe try '$name init'
 How to use Scratchpad CLI:
 
 > $name init ~/my-folder
-"Initialized scratchpad at '~/my-folder/pad.md'"
+Initialized scratchpad at '~/my-folder/pad.md'
+
+> $name path
+~/my-folder/pad.md
+
+> $name config
+/.scratchrc
 
 > $name flip
-"Flipped to page 2"
+Flipped to page 2
 
 > $name tag my-first-tag
 
 > $name flip 1
-"Flipped to page 1"
+Flipped to page 1
 
 > $name list
-"my-first-tag -> 2"
+my-first-tag -> 2
 
 > $name trash 2
-"Trashed page 2"
+Trashed page 2
 
 > $name page
-" * 1"
+ * 1
 
 > $name copy main
-"Copied scratchpad to main"
+Copied scratchpad to main
 
 EOM
 fi
